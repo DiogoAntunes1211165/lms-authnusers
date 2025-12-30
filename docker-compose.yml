@@ -5,7 +5,7 @@ services:
         container_name: users_in_lms_network
         build:
             context: .
-            dockerfile: Dockerfile
+            dockerfile: DockerfileWithPackaging
         ports:
             - "8084:8080"
 #        depends_on:    # adopting database per-service, this might not be a common service

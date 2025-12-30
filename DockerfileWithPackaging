@@ -1,5 +1,5 @@
 # Use a Maven image with JDK installed
-FROM maven:3.8.8-eclipse-temurin-21-alpine AS build
+FROM maven:3.9.6-eclipse-temurin-21-jammy AS build
 
 # Set working directory in the container
 WORKDIR /app
@@ -12,11 +12,11 @@ RUN mvn dependency:go-offline
 COPY src ./src
 
 # Package the application
-RUN mvn package -DskipTests
+RUN mvn clean package -DskipTests
 
 
 # Run the app using the JAR (if it is a standalone application)
-FROM eclipse-temurin:21-jdk-slim
+FROM maven:3.9.6-eclipse-temurin-21-jammy
 
 WORKDIR /app
 

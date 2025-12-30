@@ -59,8 +59,6 @@ networks:
     name: lms_network
     driver: overlay
 
-
-
 volumes:
   uploaded_files_volume_1:
   uploaded_files_volume_2:
