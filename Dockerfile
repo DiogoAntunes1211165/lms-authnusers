@@ -1,4 +1,4 @@
-FROM maven:3.9.6-eclipse-temurin-21-jammy
+FROM eclipse-temurin:17-jdk
 
 # Set a working directory inside the container
 WORKDIR /app
