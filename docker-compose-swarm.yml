@@ -3,7 +3,7 @@ services:
     image: lmsauthnusers:latest
     environment:
       - SPRING_PROFILES_ACTIVE=bootstrap
-      - spring.datasource.url=jdbc:postgresql://lmsauthnusers_postgres${TASK_SLOT}:${POSTGRES_PORT:-5432}/postgres
+      - spring.datasource.url=jdbc:postgresql://postgres:5432/postgres
       - spring.datasource.username=postgres
       - spring.datasource.password=password
       - spring.datasource.driver-class-name=org.postgresql.Driver
@@ -15,8 +15,13 @@ services:
       - "uploaded_files_volume_1:/tmp"
     deploy:
       replicas: 2
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+        max_attempts: 5
+        window: 120s
     ports:
-      - "8090:8081"  # Expose the lmsbooks service on port 8087
+      - "8090:8080"  # Swarm will load balance between replicas on this single port
     networks:
       - lms_network
     depends_on:
@@ -29,36 +34,48 @@ services:
       - POSTGRES_DB=postgres
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=password
-    deploy:
-      replicas: 2
-    ports:
-      #      - "5432:5432"  # Default Postgres port for the first replica
-      #      - "5433:5432"  # Postgres port for the second replica
-      #      - "5434:5432"  # Postgres port for the third replica
-      - "5435-5437:5432"
-    networks:
-      - lms_network
-
-  rabbitmq:
-    image:	rabbitmq:3-management
-    container_name: rabbitmq
-    restart: unless-stopped
+    volumes:
+      - postgres_data:/var/lib/postgresql
     deploy:
       replicas: 1
+      restart_policy:
+        condition: on-failure
+    ports:
+      - "5432:5432"  # Postgres port
+    networks:
+      - lms_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
     ports:
       - "5672:5672"		#	RabbitMQ	main	port
       - "15672:15672"		#	RabbitMQ	management	UI
     environment:
-      RABBITMQ_DEFAULT_USER:	guest
-      RABBITMQ_DEFAULT_PASS:	guest
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
     networks:
       - lms_network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 networks:
   lms_network:
-    name: lms_network
     driver: overlay
+    external: true
 
 volumes:
+  postgres_data:
   uploaded_files_volume_1:
   uploaded_files_volume_2:
